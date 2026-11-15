@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="da">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DR · Musiksamling</title>
+<link rel="stylesheet" href="styles.css">
+<script defer src="https://unpkg.com/vue@3.5.13/dist/vue.global.prod.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/axios@1.7.9/dist/axios.min.js"></script>
+<script defer src="config.js"></script><script defer src="app.js"></script>
+</head>
+<body>
+<main id="app" v-cloak>
+<header><span class="brand">DR</span><span>Musikarkivet</span></header>
+<p class="eyebrow">SAMLINGEN</p><h1>Musik gennem tiden</h1>
+<p>Gå på opdagelse i vores samling af musikplader.</p>
+<p v-if="loading" role="status">Henter musikplader…</p>
+<div v-else-if="error" role="alert"><p>{{ error }}</p><button @click="loadRecords">Prøv igen</button></div>
+<p v-else-if="records.length === 0" role="status">Der er endnu ingen musikplader i samlingen.</p>
+<template v-else>
+<p class="count">{{ records.length }} plader i samlingen</p>
+<div class="table-wrapper"><table>
+<caption class="sr-only">Alle musikplader</caption>
+<thead><tr><th scope="col">Titel</th><th scope="col">Kunstner</th><th scope="col">Varighed</th><th scope="col">Udgivelsesår</th></tr></thead>
+<tbody><tr v-for="record in records" :key="record.id" data-testid="record-row">
+<td>{{ record.title }}</td><td>{{ record.artist }}</td><td>{{ formatDuration(record.duration) }}</td><td>{{ record.publicationYear }}</td>
+</tr></tbody></table></div>
+</template>
+</main>
+</body></html>

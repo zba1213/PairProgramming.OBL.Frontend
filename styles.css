@@ -1,0 +1,17 @@
+[v-cloak] { display: none; }
+* { box-sizing: border-box; }
+body { margin: 0; background: #f4f2ed; color: #202d2a; font-family: system-ui, sans-serif; }
+main { max-width: 1100px; margin: auto; padding: 36px 24px 80px; }
+header { display: flex; align-items: center; gap: 16px; padding-bottom: 32px; border-bottom: 1px solid #cdd3cb; margin-bottom: 64px; font-weight: 600; }
+.brand { background: #202d2a; color: white; padding: 8px 12px; font-size: 24px; }
+h1 { font-size: clamp(2rem, 5vw, 3.6rem); letter-spacing: -.04em; margin: 12px 0; }
+.eyebrow { letter-spacing: .15em; font-size: 12px; font-weight: 700; }
+.count { margin-top: 48px; font-weight: 600; }
+.table-wrapper { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; background: #fff; text-align: left; }
+th, td { padding: 22px 20px; border-bottom: 1px solid #e4e7df; }
+th { background: #dfe8dc; font-size: 13px; }
+td:first-child { font-weight: 650; }
+button { padding: 12px 20px; color: #fff; background: #234c3d; border: 0; cursor: pointer; border-radius: 4px; }
+button:focus-visible { outline: 3px solid #ac5d00; outline-offset: 3px; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
