@@ -47,13 +47,50 @@ const LoginPanel = {
     `
 };
 
+const RecordForm = {
+    props: ['busy'],
+    emits: ['add'],
+    data() {
+        return { title: '', artist: '', duration: '', publicationYear: '' };
+    },
+    methods: {
+        submit() {
+            if (!this.title || !this.artist || this.busy) return;
+            this.$emit('add', {
+                title: this.title,
+                artist: this.artist,
+                duration: this.duration,
+                publicationYear: this.publicationYear
+            });
+        }
+    },
+    template: `
+        <section aria-labelledby="add-record-heading" class="record-form">
+            <h2 id="add-record-heading">Tilføj musikplade</h2>
+            <form @submit.prevent="submit">
+                <fieldset class="filter-fields" :disabled="busy">
+                    <label>Titel<input id="record-title" v-model.trim="title" maxlength="200" required></label>
+                    <label>Kunstner<input id="record-artist" v-model.trim="artist" maxlength="200" required></label>
+                    <label>Varighed i sekunder<input id="record-duration" v-model.number="duration" type="number" min="1" max="2147483647" required></label>
+                    <label>Udgivelsesår<input id="record-year" v-model.number="publicationYear" type="number" min="1" max="9999" required></label>
+                    <button type="submit">Tilføj</button>
+                </fieldset>
+            </form>
+        </section>
+    `
+};
+
 Vue.createApp({
-    components: { LoginPanel },
+    components: { LoginPanel, RecordForm },
     data() {
         return {
             records: [],
             session: null,
             sessionTimer: null,
+            saving: false,
+            recordFormVersion: 0,
+            mutationStatus: '',
+            mutationError: '',
             filters: { title: '', artist: '', publicationYear: '' },
             appliedFilters: {},
             loading: true,
@@ -61,6 +98,9 @@ Vue.createApp({
         };
     },
     computed: {
+        canManageRecords() {
+            return this.session?.role === 'Editor';
+        },
         hasFilters() {
             return Object.values(this.appliedFilters).some(value => value !== '');
         }
@@ -77,6 +117,56 @@ Vue.createApp({
             clearTimeout(this.sessionTimer);
             this.sessionTimer = null;
             this.session = null;
+        },
+        async addRecord(record) {
+            await this.changeRecords('post', '', record);
+        },
+        async deleteRecord(record) {
+            if (!this.canManageRecords || this.saving) return;
+            if (window.confirm(`Slet “${record.title}” fra samlingen?`)) {
+                await this.changeRecords('delete', `/${record.id}`);
+            }
+        },
+        async changeRecords(method, path, data) {
+            if (!this.canManageRecords || this.saving || this.loading) return;
+            this.saving = true;
+            this.mutationStatus = '';
+            this.mutationError = '';
+            const token = this.session.token;
+            try {
+                await axios({
+                    method,
+                    url: `${window.APP_CONFIG.apiBaseUrl}/api/musicrecords${path}`,
+                    data,
+                    headers: { Authorization: `Bearer ${token}` },
+                    timeout: 10000
+                });
+                if (method === 'post') this.recordFormVersion++;
+                this.mutationStatus = method === 'post' ? 'Musikpladen er tilføjet.' : 'Musikpladen er slettet.';
+                await this.loadRecords();
+            } catch (error) {
+                switch (error.response?.status) {
+                    case 400:
+                        this.mutationError = 'Kontrollér titel, kunstner, varighed og udgivelsesår.';
+                        break;
+                    case 401:
+                        if (this.session?.token === token) this.clearSession();
+                        this.mutationError = 'Din session er udløbet. Log ind igen.';
+                        break;
+                    case 403:
+                        this.mutationError = 'Din konto har ikke adgang til at ændre samlingen.';
+                        break;
+                    case 404:
+                        this.mutationError = 'Musikpladen findes ikke længere.';
+                        await this.loadRecords();
+                        break;
+                    default:
+                        this.mutationError = 'Ændringen kunne ikke bekræftes. Kontrollér listen, før du prøver igen.';
+                        await this.loadRecords();
+                }
+            } finally {
+                this.saving = false;
+            }
         },
         applyFilters() {
             this.appliedFilters = {
