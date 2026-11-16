@@ -15,7 +15,7 @@
 </header>
 <p class="eyebrow">SAMLINGEN</p><h1>Musik gennem tiden</h1>
 <p>Gå på opdagelse i vores samling af musikplader.</p>
-<record-form v-if="canManageRecords" :key="recordFormVersion" :busy="saving || loading" @add="addRecord"></record-form>
+<record-form v-if="canManageRecords" :busy="saving || loading" :add-record="addRecord"></record-form>
 <div class="record-feedback">
 <p v-if="mutationStatus" role="status">{{ mutationStatus }}</p>
 <p v-if="mutationError" role="alert">{{ mutationError }}</p>
