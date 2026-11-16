@@ -1,3 +1,5 @@
+const recordsUrl = `${window.APP_CONFIG.apiBaseUrl}/api/musicrecords`;
+
 const LoginPanel = {
     props: ['session'],
     emits: ['signed-in', 'signed-out'],
@@ -48,20 +50,14 @@ const LoginPanel = {
 };
 
 const RecordForm = {
-    props: ['busy'],
-    emits: ['add'],
+    props: ['busy', 'addRecord'],
     data() {
-        return { title: '', artist: '', duration: '', publicationYear: '' };
+        return { record: {} };
     },
     methods: {
-        submit() {
-            if (!this.title || !this.artist || this.busy) return;
-            this.$emit('add', {
-                title: this.title,
-                artist: this.artist,
-                duration: this.duration,
-                publicationYear: this.publicationYear
-            });
+        async submit() {
+            if (!this.record.title || !this.record.artist || this.busy) return;
+            if (await this.addRecord(this.record)) this.record = {};
         }
     },
     template: `
@@ -69,10 +65,10 @@ const RecordForm = {
             <h2 id="add-record-heading">Tilføj musikplade</h2>
             <form @submit.prevent="submit">
                 <fieldset class="filter-fields" :disabled="busy">
-                    <label>Titel<input id="record-title" v-model.trim="title" maxlength="200" required></label>
-                    <label>Kunstner<input id="record-artist" v-model.trim="artist" maxlength="200" required></label>
-                    <label>Varighed i sekunder<input id="record-duration" v-model.number="duration" type="number" min="1" max="2147483647" required></label>
-                    <label>Udgivelsesår<input id="record-year" v-model.number="publicationYear" type="number" min="1" max="9999" required></label>
+                    <label>Titel<input id="record-title" v-model.trim="record.title" maxlength="200" required></label>
+                    <label>Kunstner<input id="record-artist" v-model.trim="record.artist" maxlength="200" required></label>
+                    <label>Varighed i sekunder<input id="record-duration" v-model.number="record.duration" type="number" min="1" max="2147483647" required></label>
+                    <label>Udgivelsesår<input id="record-year" v-model.number="record.publicationYear" type="number" min="1" max="9999" required></label>
                     <button type="submit">Tilføj</button>
                 </fieldset>
             </form>
@@ -88,7 +84,6 @@ Vue.createApp({
             session: null,
             sessionTimer: null,
             saving: false,
-            recordFormVersion: 0,
             mutationStatus: '',
             mutationError: '',
             filters: { title: '', artist: '', publicationYear: '' },
@@ -119,54 +114,64 @@ Vue.createApp({
             this.session = null;
         },
         async addRecord(record) {
-            await this.changeRecords('post', '', record);
-        },
-        async deleteRecord(record) {
-            if (!this.canManageRecords || this.saving) return;
-            if (window.confirm(`Slet “${record.title}” fra samlingen?`)) {
-                await this.changeRecords('delete', `/${record.id}`);
-            }
-        },
-        async changeRecords(method, path, data) {
-            if (!this.canManageRecords || this.saving || this.loading) return;
-            this.saving = true;
-            this.mutationStatus = '';
-            this.mutationError = '';
+            if (!this.canManageRecords || this.saving || this.loading) return false;
             const token = this.session.token;
+            this.startSaving();
             try {
-                await axios({
-                    method,
-                    url: `${window.APP_CONFIG.apiBaseUrl}/api/musicrecords${path}`,
-                    data,
-                    headers: { Authorization: `Bearer ${token}` },
-                    timeout: 10000
-                });
-                if (method === 'post') this.recordFormVersion++;
-                this.mutationStatus = method === 'post' ? 'Musikpladen er tilføjet.' : 'Musikpladen er slettet.';
+                await axios.post(recordsUrl, record, this.authorizedRequest(token));
+                this.mutationStatus = 'Musikpladen er tilføjet.';
                 await this.loadRecords();
+                return true;
             } catch (error) {
-                switch (error.response?.status) {
-                    case 400:
-                        this.mutationError = 'Kontrollér titel, kunstner, varighed og udgivelsesår.';
-                        break;
-                    case 401:
-                        if (this.session?.token === token) this.clearSession();
-                        this.mutationError = 'Din session er udløbet. Log ind igen.';
-                        break;
-                    case 403:
-                        this.mutationError = 'Din konto har ikke adgang til at ændre samlingen.';
-                        break;
-                    case 404:
-                        this.mutationError = 'Musikpladen findes ikke længere.';
-                        await this.loadRecords();
-                        break;
-                    default:
-                        this.mutationError = 'Ændringen kunne ikke bekræftes. Kontrollér listen, før du prøver igen.';
-                        await this.loadRecords();
-                }
+                await this.handleSaveError(error, token);
+                return false;
             } finally {
                 this.saving = false;
             }
+        },
+        async deleteRecord(record) {
+            if (!this.canManageRecords || this.saving || this.loading) return;
+            if (!window.confirm(`Slet “${record.title}” fra samlingen?`)) return;
+
+            const token = this.session.token;
+            this.startSaving();
+            try {
+                await axios.delete(`${recordsUrl}/${record.id}`, this.authorizedRequest(token));
+                this.mutationStatus = 'Musikpladen er slettet.';
+                await this.loadRecords();
+            } catch (error) {
+                await this.handleSaveError(error, token);
+            } finally {
+                this.saving = false;
+            }
+        },
+        startSaving() {
+            this.saving = true;
+            this.mutationStatus = '';
+            this.mutationError = '';
+        },
+        authorizedRequest(token) {
+            return { headers: { Authorization: `Bearer ${token}` }, timeout: 10000 };
+        },
+        async handleSaveError(error, token) {
+            switch (error.response?.status) {
+                case 400:
+                    this.mutationError = 'Kontrollér titel, kunstner, varighed og udgivelsesår.';
+                    return;
+                case 401:
+                    if (this.session?.token === token) this.clearSession();
+                    this.mutationError = 'Din session er udløbet. Log ind igen.';
+                    return;
+                case 403:
+                    this.mutationError = 'Din konto har ikke adgang til at ændre samlingen.';
+                    return;
+                case 404:
+                    this.mutationError = 'Musikpladen findes ikke længere.';
+                    break;
+                default:
+                    this.mutationError = 'Ændringen kunne ikke bekræftes. Kontrollér listen, før du prøver igen.';
+            }
+            await this.loadRecords();
         },
         applyFilters() {
             this.appliedFilters = {
@@ -184,7 +189,7 @@ Vue.createApp({
             this.loading = true;
             this.error = null;
             try {
-                const response = await axios.get(`${window.APP_CONFIG.apiBaseUrl}/api/musicrecords`, {
+                const response = await axios.get(recordsUrl, {
                     params: Object.fromEntries(
                         Object.entries(this.appliedFilters).filter(([, value]) => value !== '')
                     ),
