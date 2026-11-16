@@ -50,26 +50,31 @@ const LoginPanel = {
 };
 
 const RecordForm = {
-    props: ['busy', 'addRecord'],
+    props: ['busy', 'editingRecord', 'saveRecord'],
+    emits: ['cancel'],
     data() {
-        return { record: {} };
+        return { record: { ...this.editingRecord } };
+    },
+    mounted() {
+        if (this.editingRecord) this.$refs.title.focus();
     },
     methods: {
         async submit() {
             if (!this.record.title || !this.record.artist || this.busy) return;
-            if (await this.addRecord(this.record)) this.record = {};
+            if (await this.saveRecord(this.record)) this.record = {};
         }
     },
     template: `
-        <section aria-labelledby="add-record-heading" class="record-form">
-            <h2 id="add-record-heading">Tilføj musikplade</h2>
+        <section aria-labelledby="record-form-heading" class="record-form">
+            <h2 id="record-form-heading">{{ editingRecord ? 'Redigér musikplade' : 'Tilføj musikplade' }}</h2>
             <form @submit.prevent="submit">
                 <fieldset class="filter-fields" :disabled="busy">
-                    <label>Titel<input id="record-title" v-model.trim="record.title" maxlength="200" required></label>
+                    <label>Titel<input id="record-title" ref="title" v-model.trim="record.title" maxlength="200" required></label>
                     <label>Kunstner<input id="record-artist" v-model.trim="record.artist" maxlength="200" required></label>
                     <label>Varighed i sekunder<input id="record-duration" v-model.number="record.duration" type="number" min="1" max="2147483647" required></label>
                     <label>Udgivelsesår<input id="record-year" v-model.number="record.publicationYear" type="number" min="1" max="9999" required></label>
-                    <button type="submit">Tilføj</button>
+                    <button type="submit">{{ editingRecord ? 'Gem ændringer' : 'Tilføj' }}</button>
+                    <button v-if="editingRecord" type="button" @click="$emit('cancel')">Annullér</button>
                 </fieldset>
             </form>
         </section>
@@ -81,6 +86,7 @@ Vue.createApp({
     data() {
         return {
             records: [],
+            editingRecord: null,
             session: null,
             sessionTimer: null,
             saving: false,
@@ -112,6 +118,12 @@ Vue.createApp({
             clearTimeout(this.sessionTimer);
             this.sessionTimer = null;
             this.session = null;
+            this.editingRecord = null;
+        },
+        editRecord(record) {
+            this.mutationStatus = '';
+            this.mutationError = '';
+            this.editingRecord = record;
         },
         async addRecord(record) {
             if (!this.canManageRecords || this.saving || this.loading) return false;
@@ -129,6 +141,23 @@ Vue.createApp({
                 this.saving = false;
             }
         },
+        async updateRecord(record) {
+            if (!this.canManageRecords || this.saving || this.loading) return false;
+            const token = this.session.token;
+            this.startSaving();
+            try {
+                await axios.put(`${recordsUrl}/${record.id}`, record, this.authorizedRequest(token));
+                this.editingRecord = null;
+                this.mutationStatus = 'Musikpladen er opdateret.';
+                await this.loadRecords();
+                return true;
+            } catch (error) {
+                await this.handleSaveError(error, token);
+                return false;
+            } finally {
+                this.saving = false;
+            }
+        },
         async deleteRecord(record) {
             if (!this.canManageRecords || this.saving || this.loading) return;
             if (!window.confirm(`Slet “${record.title}” fra samlingen?`)) return;
@@ -137,6 +166,7 @@ Vue.createApp({
             this.startSaving();
             try {
                 await axios.delete(`${recordsUrl}/${record.id}`, this.authorizedRequest(token));
+                if (this.editingRecord?.id === record.id) this.editingRecord = null;
                 this.mutationStatus = 'Musikpladen er slettet.';
                 await this.loadRecords();
             } catch (error) {
