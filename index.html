@@ -13,13 +13,23 @@
 <header><span class="brand">DR</span><span>Musikarkivet</span></header>
 <p class="eyebrow">SAMLINGEN</p><h1>Musik gennem tiden</h1>
 <p>Gå på opdagelse i vores samling af musikplader.</p>
+<form class="filters" @submit.prevent="applyFilters">
+<fieldset :disabled="loading" class="filter-fields">
+<legend class="sr-only">Filtrér musikplader</legend>
+<label for="filter-title">Titel<input id="filter-title" v-model="filters.title" type="search"></label>
+<label for="filter-artist">Kunstner<input id="filter-artist" v-model="filters.artist" type="search"></label>
+<label for="filter-year">Udgivelsesår<input id="filter-year" v-model="filters.publicationYear" type="number" min="1" max="9999" step="1"></label>
+<button type="submit">Søg</button>
+<button type="button" class="reset-filters" @click="resetFilters">Nulstil</button>
+</fieldset>
+</form>
 <p v-if="loading" role="status">Henter musikplader…</p>
 <div v-else-if="error" role="alert"><p>{{ error }}</p><button @click="loadRecords">Prøv igen</button></div>
-<p v-else-if="records.length === 0" role="status">Der er endnu ingen musikplader i samlingen.</p>
+<p v-else-if="records.length === 0" role="status">{{ hasFilters ? 'Ingen musikplader matcher din søgning.' : 'Der er endnu ingen musikplader i samlingen.' }}</p>
 <template v-else>
-<p class="count">{{ records.length }} plader i samlingen</p>
+<p class="count" role="status">{{ records.length }} {{ records.length === 1 ? 'plade' : 'plader' }} {{ hasFilters ? 'fundet' : 'i samlingen' }}</p>
 <div class="table-wrapper"><table>
-<caption class="sr-only">Alle musikplader</caption>
+<caption class="sr-only">Musikplader</caption>
 <thead><tr><th scope="col">Titel</th><th scope="col">Kunstner</th><th scope="col">Varighed</th><th scope="col">Udgivelsesår</th></tr></thead>
 <tbody><tr v-for="record in records" :key="record.id" data-testid="record-row">
 <td>{{ record.title }}</td><td>{{ record.artist }}</td><td>{{ formatDuration(record.duration) }}</td><td>{{ record.publicationYear }}</td>
