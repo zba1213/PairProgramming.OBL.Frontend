@@ -10,7 +10,9 @@
 </head>
 <body>
 <main id="app" v-cloak>
-<header><span class="brand">DR</span><span>Musikarkivet</span></header>
+<header><span class="brand">DR</span><span>Musikarkivet</span>
+<login-panel class="login-panel" :session="session" @signed-in="setSession" @signed-out="clearSession"></login-panel>
+</header>
 <p class="eyebrow">SAMLINGEN</p><h1>Musik gennem tiden</h1>
 <p>Gå på opdagelse i vores samling af musikplader.</p>
 <form class="filters" @submit.prevent="applyFilters">

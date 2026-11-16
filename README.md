@@ -11,6 +11,11 @@ Siden viser indlæsning, tom samling og fejl med mulighed for at prøve igen.
 Varighed vises som minutter:sekunder, mens API bruger heltalssekunder.
 Vue og Axios hentes fra CDN, så internetadgang kræves.
 
+Loginformularen bruger en Vue-komponent og kalder `POST /api/auth/login`.
+Konfigurér en lokal testkonto som beskrevet i backendens README.
+JWT ligger i sidens hukommelse. Logout, udløb og genindlæsning afslutter
+sessionen i browseren. Søgning og listevisning er tilgængelige uden login.
+
 UI-tests ligger separat i `PairProgramming.OBL.UITests`.
 Ved FTP-publicering: upload index.html, styles.css, config.js og app.js.
 Ret API-adressen i config.js til backendens HTTPS-URL og tillad frontendens origin i backendens CORS-konfiguration.
