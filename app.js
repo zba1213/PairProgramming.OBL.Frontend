@@ -1,12 +1,42 @@
 Vue.createApp({
-    data() { return { records: [], loading: true, error: null }; },
+    data() {
+        return {
+            records: [],
+            filters: { title: '', artist: '', publicationYear: '' },
+            appliedFilters: {},
+            loading: true,
+            error: null
+        };
+    },
+    computed: {
+        hasFilters() {
+            return Object.values(this.appliedFilters).some(value => value !== '');
+        }
+    },
     mounted() { this.loadRecords(); },
     methods: {
+        applyFilters() {
+            this.appliedFilters = {
+                title: this.filters.title.trim(),
+                artist: this.filters.artist.trim(),
+                publicationYear: this.filters.publicationYear
+            };
+            this.loadRecords();
+        },
+        resetFilters() {
+            this.filters = { title: '', artist: '', publicationYear: '' };
+            this.applyFilters();
+        },
         async loadRecords() {
             this.loading = true;
             this.error = null;
             try {
-                const response = await axios.get(`${window.APP_CONFIG.apiBaseUrl}/api/musicrecords`, { timeout: 10000 });
+                const response = await axios.get(`${window.APP_CONFIG.apiBaseUrl}/api/musicrecords`, {
+                    params: Object.fromEntries(
+                        Object.entries(this.appliedFilters).filter(([, value]) => value !== '')
+                    ),
+                    timeout: 10000
+                });
                 if (!Array.isArray(response.data)) throw new Error('Invalid API response');
                 this.records = response.data;
             } catch {
