@@ -15,7 +15,9 @@
 </header>
 <p class="eyebrow">SAMLINGEN</p><h1>Musik gennem tiden</h1>
 <p>Gå på opdagelse i vores samling af musikplader.</p>
-<record-form v-if="canManageRecords" :busy="saving || loading" :add-record="addRecord"></record-form>
+<record-form v-if="canManageRecords" :key="editingRecord?.id ?? 'new'" :busy="saving || loading"
+    :editing-record="editingRecord" :save-record="editingRecord ? updateRecord : addRecord"
+    @cancel="editingRecord = null"></record-form>
 <div class="record-feedback">
 <p v-if="mutationStatus" role="status">{{ mutationStatus }}</p>
 <p v-if="mutationError" role="alert">{{ mutationError }}</p>
@@ -40,7 +42,11 @@
 <thead><tr><th scope="col">Titel</th><th scope="col">Kunstner</th><th scope="col">Varighed</th><th scope="col">Udgivelsesår</th><th v-if="canManageRecords" scope="col">Handling</th></tr></thead>
 <tbody><tr v-for="record in records" :key="record.id" data-testid="record-row">
 <td>{{ record.title }}</td><td>{{ record.artist }}</td><td>{{ formatDuration(record.duration) }}</td><td>{{ record.publicationYear }}</td>
-<td v-if="canManageRecords"><button type="button" class="delete-record" :disabled="saving || loading" :aria-label="'Slet ' + record.title" @click="deleteRecord(record)">Slet</button></td>
+<td v-if="canManageRecords">
+    <button type="button" class="edit-record" :disabled="saving || loading || editingRecord?.id === record.id"
+        :aria-label="'Redigér ' + record.title" @click="editRecord(record)">Redigér</button>
+    <button type="button" class="delete-record" :disabled="saving || loading" :aria-label="'Slet ' + record.title" @click="deleteRecord(record)">Slet</button>
+</td>
 </tr></tbody></table></div>
 </template>
 </main>
