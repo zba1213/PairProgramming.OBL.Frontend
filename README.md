@@ -15,6 +15,7 @@ Loginformularen bruger en Vue-komponent og kalder `POST /api/auth/login`.
 Konfigurér en lokal testkonto som beskrevet i backendens README.
 JWT ligger i sidens hukommelse. Logout, udløb og genindlæsning afslutter
 sessionen i browseren. Søgning og listevisning er tilgængelige uden login.
+Med rollen `Editor` kan du tilføje en plade eller slette en plade fra tabellen.
 
 UI-tests ligger separat i `PairProgramming.OBL.UITests`.
 Ved FTP-publicering: upload index.html, styles.css, config.js og app.js.

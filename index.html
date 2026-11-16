@@ -15,8 +15,13 @@
 </header>
 <p class="eyebrow">SAMLINGEN</p><h1>Musik gennem tiden</h1>
 <p>Gå på opdagelse i vores samling af musikplader.</p>
+<record-form v-if="canManageRecords" :key="recordFormVersion" :busy="saving || loading" @add="addRecord"></record-form>
+<div class="record-feedback">
+<p v-if="mutationStatus" role="status">{{ mutationStatus }}</p>
+<p v-if="mutationError" role="alert">{{ mutationError }}</p>
+</div>
 <form class="filters" @submit.prevent="applyFilters">
-<fieldset :disabled="loading" class="filter-fields">
+<fieldset :disabled="loading || saving" class="filter-fields">
 <legend class="sr-only">Filtrér musikplader</legend>
 <label for="filter-title">Titel<input id="filter-title" v-model="filters.title" type="search"></label>
 <label for="filter-artist">Kunstner<input id="filter-artist" v-model="filters.artist" type="search"></label>
@@ -32,9 +37,10 @@
 <p class="count" role="status">{{ records.length }} {{ records.length === 1 ? 'plade' : 'plader' }} {{ hasFilters ? 'fundet' : 'i samlingen' }}</p>
 <div class="table-wrapper"><table>
 <caption class="sr-only">Musikplader</caption>
-<thead><tr><th scope="col">Titel</th><th scope="col">Kunstner</th><th scope="col">Varighed</th><th scope="col">Udgivelsesår</th></tr></thead>
+<thead><tr><th scope="col">Titel</th><th scope="col">Kunstner</th><th scope="col">Varighed</th><th scope="col">Udgivelsesår</th><th v-if="canManageRecords" scope="col">Handling</th></tr></thead>
 <tbody><tr v-for="record in records" :key="record.id" data-testid="record-row">
 <td>{{ record.title }}</td><td>{{ record.artist }}</td><td>{{ formatDuration(record.duration) }}</td><td>{{ record.publicationYear }}</td>
+<td v-if="canManageRecords"><button type="button" class="delete-record" :disabled="saving || loading" :aria-label="'Slet ' + record.title" @click="deleteRecord(record)">Slet</button></td>
 </tr></tbody></table></div>
 </template>
 </main>
