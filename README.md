@@ -1,23 +1,33 @@
 # DR musiksamling – frontend
 
-Første brugerhistorie: vis alle musikplader fra REST API med Vue 3 og Axios.
-HTML/CSS/JavaScript-projekt til VS Code; ingen build kræves.
+Vue 3, Vite og Axios. Vue-komponenterne ligger i `src/`: `App.vue` viser
+samlingen, og `components/` indeholder login og formularen til plader.
 
-1. Start backend fra `PairProgramming.OBL` på http://localhost:5000.
-2. Kør `python -m http.server 5500` fra denne mappe (eller VS Code Live Server på port 5500).
-3. Åbn http://localhost:5500. Brug ikke file://.
+## Kør lokalt
 
-Siden viser indlæsning, tom samling og fejl med mulighed for at prøve igen.
-Varighed vises som minutter:sekunder, mens API bruger heltalssekunder.
-Vue og Axios hentes fra CDN, så internetadgang kræves.
+1. Start backend fra backend-repoet med `dotnet run --project src/MusicRecords.Api --launch-profile http`.
+2. Installer en Node.js-version, der opfylder `engines.node` i `package.json`.
+3. Kør disse kommandoer i frontendmappen:
 
-Loginformularen bruger en Vue-komponent og kalder `POST /api/auth/login`.
-Konfigurér en lokal testkonto som beskrevet i backendens README.
-JWT ligger i sidens hukommelse. Logout, udløb og genindlæsning afslutter
-sessionen i browseren. Søgning og listevisning er tilgængelige uden login.
-Med rollen `Editor` kan du tilføje en plade eller slette en plade fra tabellen.
+   ```sh
+   npm ci
+   npm run dev
+   ```
 
-UI-tests ligger separat i `PairProgramming.OBL.UITests`.
-Ved FTP-publicering: upload index.html, styles.css, config.js og app.js.
-Ret API-adressen i config.js til backendens HTTPS-URL og tillad frontendens origin i backendens CORS-konfiguration.
-Hosting er endnu ikke konfigureret.
+4. Åbn http://localhost:5500. Frontend bruger som standard API'et på http://localhost:5000.
+
+Liste og søgning virker uden login. Konfigurér en lokal testkonto som
+beskrevet i backendens README. Rollen `Editor` kan tilføje, redigere og
+slette plader. En genindlæsning afslutter sessionen.
+
+UI-tests ligger i det separate `PairProgramming.OBL.UITests`-repo.
+
+## Byg og publicér
+
+Kør `npm run build` og upload indholdet af `dist/` via FTP. Til lokal
+kontrol af det færdige build kan du stoppe udviklingsserveren og køre
+`npm run preview`.
+
+Sæt `VITE_API_BASE_URL` til API'ets HTTPS-adresse før build, fx i
+`.env.production.local`. Backend skal tillade frontendens origin i sin
+CORS-konfiguration.
