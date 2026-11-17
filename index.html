@@ -1,53 +1,12 @@
 <!doctype html>
 <html lang="da">
-<head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>DR · Musiksamling</title>
-<link rel="stylesheet" href="styles.css">
-<script defer src="https://unpkg.com/vue@3.5.13/dist/vue.global.prod.js"></script>
-<script defer src="https://cdn.jsdelivr.net/npm/axios@1.7.9/dist/axios.min.js"></script>
-<script defer src="config.js"></script><script defer src="app.js"></script>
-</head>
-<body>
-<main id="app" v-cloak>
-<header><span class="brand">DR</span><span>Musikarkivet</span>
-<login-panel class="login-panel" :session="session" @signed-in="setSession" @signed-out="clearSession"></login-panel>
-</header>
-<p class="eyebrow">SAMLINGEN</p><h1>Musik gennem tiden</h1>
-<p>Gå på opdagelse i vores samling af musikplader.</p>
-<record-form v-if="canManageRecords" :key="editingRecord?.id ?? 'new'" :busy="saving || loading"
-    :editing-record="editingRecord" :save-record="editingRecord ? updateRecord : addRecord"
-    @cancel="editingRecord = null"></record-form>
-<div class="record-feedback">
-<p v-if="mutationStatus" role="status">{{ mutationStatus }}</p>
-<p v-if="mutationError" role="alert">{{ mutationError }}</p>
-</div>
-<form class="filters" @submit.prevent="applyFilters">
-<fieldset :disabled="loading || saving" class="filter-fields">
-<legend class="sr-only">Filtrér musikplader</legend>
-<label for="filter-title">Titel<input id="filter-title" v-model="filters.title" type="search"></label>
-<label for="filter-artist">Kunstner<input id="filter-artist" v-model="filters.artist" type="search"></label>
-<label for="filter-year">Udgivelsesår<input id="filter-year" v-model="filters.publicationYear" type="number" min="1" max="9999" step="1"></label>
-<button type="submit">Søg</button>
-<button type="button" class="reset-filters" @click="resetFilters">Nulstil</button>
-</fieldset>
-</form>
-<p v-if="loading" role="status">Henter musikplader…</p>
-<div v-else-if="error" role="alert"><p>{{ error }}</p><button @click="loadRecords">Prøv igen</button></div>
-<p v-else-if="records.length === 0" role="status">{{ hasFilters ? 'Ingen musikplader matcher din søgning.' : 'Der er endnu ingen musikplader i samlingen.' }}</p>
-<template v-else>
-<p class="count" role="status">{{ records.length }} {{ records.length === 1 ? 'plade' : 'plader' }} {{ hasFilters ? 'fundet' : 'i samlingen' }}</p>
-<div class="table-wrapper"><table>
-<caption class="sr-only">Musikplader</caption>
-<thead><tr><th scope="col">Titel</th><th scope="col">Kunstner</th><th scope="col">Varighed</th><th scope="col">Udgivelsesår</th><th v-if="canManageRecords" scope="col">Handling</th></tr></thead>
-<tbody><tr v-for="record in records" :key="record.id" data-testid="record-row">
-<td>{{ record.title }}</td><td>{{ record.artist }}</td><td>{{ formatDuration(record.duration) }}</td><td>{{ record.publicationYear }}</td>
-<td v-if="canManageRecords">
-    <button type="button" class="edit-record" :disabled="saving || loading || editingRecord?.id === record.id"
-        :aria-label="'Redigér ' + record.title" @click="editRecord(record)">Redigér</button>
-    <button type="button" class="delete-record" :disabled="saving || loading" :aria-label="'Slet ' + record.title" @click="deleteRecord(record)">Slet</button>
-</td>
-</tr></tbody></table></div>
-</template>
-</main>
-</body></html>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>DR · Musiksamling</title>
+  </head>
+  <body>
+    <div id="vue-app"></div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
